@@ -11,9 +11,6 @@ const envSchema = z.object({
   VITE_SUPABASE_URL: z.string().url('Invalid Supabase URL'),
   VITE_SUPABASE_ANON_KEY: z.string().min(1, 'Supabase anon key is required'),
   
-  // Stripe Configuration
-  VITE_STRIPE_PUBLISHABLE_KEY: z.string().min(1, 'Stripe publishable key is required'),
-  
   // Application Configuration
   VITE_APP_NAME: z.string().default('TourCompanion'),
   VITE_APP_VERSION: z.string().default('1.0.0'),
@@ -44,8 +41,7 @@ const parseEnv = () => {
       // Return fallback values instead of throwing error
       return {
         VITE_SUPABASE_URL: "https://yrvicwapjsevyilxdzsm.supabase.co",
-        VITE_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlydmljd2FwanNldnlpbHhkenNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwMDY2ODIsImV4cCI6MjA3NTU4MjY4Mn0.tRhpswJI2CccGdWX3fcJEowSA9IBh-KMYHfaiKVjN7c",
-        VITE_STRIPE_PUBLISHABLE_KEY: "pk_test_your_stripe_publishable_key_here",
+        VITE_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlydmljd2FwanNldnlpbHhkenNtIiwicm9sZSI6ImFubGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlydmljd2FwanNldnlpbHhkenNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwMDY2ODIsImV4cCI6MjA3NTU4MjY4Mn0.tRhpswJI2CccGdWX3fcJEowSA9IBh-KMYHfaiKVjN7c",
         VITE_APP_NAME: "TourCompanion",
         VITE_APP_VERSION: "1.0.0",
         VITE_APP_ENVIRONMENT: "development" as const,

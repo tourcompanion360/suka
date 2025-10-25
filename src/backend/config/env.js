@@ -33,15 +33,7 @@ const backendEnvSchema = z.object({
   MAX_FILE_SIZE: z.string().transform(val => parseInt(val, 10)).default('10485760'), // 10MB
   UPLOAD_DIR: z.string().default('./uploads'),
   
-  // External Services
-  STRIPE_SECRET_KEY: z.string().min(1, 'Stripe secret key is required'),
-  STRIPE_WEBHOOK_SECRET: z.string().min(1, 'Stripe webhook secret is required'),
-  STRIPE_PRICE_ID_BASIC: z.string().min(1, 'Stripe Basic price ID is required'),
-  STRIPE_PRICE_ID_PRO: z.string().min(1, 'Stripe Pro price ID is required'),
-  SENDGRID_API_KEY: z.string().optional(),
-  
   // Monitoring
-  SENTRY_DSN: z.string().optional(),
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
 });
 
@@ -101,22 +93,6 @@ export const rateLimitConfig = {
 export const uploadConfig = {
   maxFileSize: backendEnv.MAX_FILE_SIZE,
   uploadDir: backendEnv.UPLOAD_DIR,
-};
-
-// External services configuration
-export const externalServices = {
-  stripe: {
-    secretKey: backendEnv.STRIPE_SECRET_KEY,
-    webhookSecret: backendEnv.STRIPE_WEBHOOK_SECRET,
-    priceIdBasic: backendEnv.STRIPE_PRICE_ID_BASIC,
-    priceIdPro: backendEnv.STRIPE_PRICE_ID_PRO,
-  },
-  sendgrid: {
-    apiKey: backendEnv.SENDGRID_API_KEY,
-  },
-  sentry: {
-    dsn: backendEnv.SENTRY_DSN,
-  },
 };
 
 // Logging configuration

@@ -6,7 +6,16 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import { supabaseAdmin } from '../config/db.js';
-import { getSubscriptionLimits } from '../../services/stripe/subscriptions.js';
+
+// Default limits (Stripe removed)
+const DEFAULT_LIMITS = {
+  maxProjects: 999,
+  maxClients: 999,
+  maxChatbots: 999,
+  analyticsAccess: true,
+  customBranding: true,
+  apiAccess: true,
+};
 
 const router = express.Router();
 
@@ -31,7 +40,7 @@ router.post('/', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Unauthorized', code: 'AUTH_REQUIRED' });
     }
 
-    const limits = await getSubscriptionLimits(userId);
+    const limits = DEFAULT_LIMITS;
 
     if (limits.maxChatbots !== -1) {
       // Count chatbots via creator's projects

@@ -1,21 +1,15 @@
 /**
  * Pricing Page
- * Displays subscription plans and handles Stripe Checkout
+ * Displays subscription plans (Stripe integration removed)
  */
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loadStripe } from '@stripe/stripe-js';
-import { env } from '../config/env';
 import { useToast } from '../hooks/use-toast';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Check, Star, Zap, Crown } from 'lucide-react';
-// Dev-mode bypass removed for production safety
-
-// Initialize Stripe
-const stripePromise = loadStripe(env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 interface Plan {
   id: string;
@@ -80,127 +74,28 @@ const Pricing: React.FC = () => {
   ];
 
   useEffect(() => {
-    // Load plans from API
-    loadPlans();
+    // Use default plans (no API call needed)
+    setPlans(defaultPlans);
   }, []);
-
-  const loadPlans = async () => {
-    try {
-      const response = await fetch('/api/billing/plans');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          // Transform API data to our format
-          const transformedPlans: Plan[] = [
-            {
-              id: 'basic',
-              name: 'Basic',
-              description: 'Perfect for small agencies and freelancers',
-              price: data.data.basic.amount / 100,
-              currency: data.data.basic.currency.toUpperCase(),
-              interval: data.data.basic.interval,
-              features: [
-                '5 Virtual Tours',
-                '10 End Clients',
-                '10 Chatbots',
-                'Basic Analytics',
-                'Email Support',
-                'Standard Templates',
-              ],
-              icon: <Zap className="h-6 w-6" />,
-              color: 'bg-blue-500',
-            },
-            {
-              id: 'pro',
-              name: 'Pro',
-              description: 'For growing agencies and businesses',
-              price: data.data.pro.amount / 100,
-              currency: data.data.pro.currency.toUpperCase(),
-              interval: data.data.pro.interval,
-              features: [
-                'Unlimited Virtual Tours',
-                'Unlimited End Clients',
-                'Unlimited Chatbots',
-                'Advanced Analytics',
-                'Priority Support',
-                'Custom Branding',
-                'API Access',
-                'White-label Options',
-              ],
-              popular: true,
-              icon: <Crown className="h-6 w-6" />,
-              color: 'bg-purple-500',
-            },
-          ];
-          setPlans(transformedPlans);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading plans:', error);
-      // Use default plans if API fails
-      setPlans(defaultPlans);
-    }
-  };
 
   const handleSelectPlan = async (planId: string) => {
     setLoading(planId);
     
     try {
-      // No dev-mode bypass: always require checkout
-
-      // Get JWT token from localStorage
-      const token = localStorage.getItem('jwt_token');
-      if (!token) {
-        toast({
-          title: 'Authentication Required',
-          description: 'Please sign in to continue with your subscription.',
-          variant: 'destructive',
-        });
-        navigate('/auth');
-        return;
-      }
-
-      // Create checkout session
-      const response = await fetch('/api/billing/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          priceId: planId === 'basic' ? 'price_basic_monthly' : 'price_pro_monthly', // You'll need to replace with actual price IDs
-        }),
+      // Show contact message instead of Stripe checkout
+      toast({
+        title: 'Contact Us',
+        description: `Interested in the ${planId === 'basic' ? 'Basic' : 'Pro'} plan? Please contact us at support@tourcompanion.com to get started.`,
+        variant: 'default',
       });
-
-      // Check if response is ok before parsing JSON
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to create checkout session');
-      }
-
-      // Redirect to Stripe Checkout
-      const stripe = await stripePromise;
-      if (!stripe) {
-        throw new Error('Stripe failed to load');
-      }
-
-      const { error } = await stripe.redirectToCheckout({
-        sessionId: data.data.sessionId,
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
+      
+      // Navigate to contact page or show contact form
+      navigate('/contact');
     } catch (error) {
-      console.error('Error creating checkout session:', error);
+      console.error('Error selecting plan:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to start checkout process',
+        description: 'Unable to process your request. Please try again.',
         variant: 'destructive',
       });
     } finally {

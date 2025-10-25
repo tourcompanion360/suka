@@ -3,6 +3,7 @@ import App from './App.tsx'
 import './index.css'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { runDeploymentDiagnostics } from './utils/deploymentDiagnostics'
+import './react-scheduler-fix.ts'
 
 // Simple test to see if React is working
 console.log('🚀 Main.tsx loaded successfully');

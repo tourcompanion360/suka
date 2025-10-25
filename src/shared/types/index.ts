@@ -33,7 +33,6 @@ export interface Creator {
   description?: string;
   subscriptionPlan: 'basic' | 'pro';
   subscriptionStatus: 'active' | 'inactive' | 'cancelled';
-  stripeCustomerId?: string;
   createdAt: string;
   updatedAt: string;
 }

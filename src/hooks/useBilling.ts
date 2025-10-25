@@ -1,6 +1,6 @@
 /**
- * Billing Hook
- * Provides billing and subscription management functionality
+ * Billing Hook (Simplified - Stripe removed)
+ * Provides basic billing and subscription management functionality
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -13,7 +13,6 @@ interface SubscriptionStatus {
   status: 'active' | 'inactive' | 'cancelled' | 'past_due' | 'unpaid' | null;
   currentPeriodEnd: Date | null;
   cancelAtPeriodEnd: boolean;
-  stripeSubscriptionId: string | null;
   limits: {
     maxProjects: number;
     maxClients: number;
@@ -49,215 +48,82 @@ export const useBilling = (): BillingHookReturn => {
       setLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('jwt_token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch('/api/billing/subscription-status', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
+      // For now, provide default "pro" access to all users (Stripe removed)
+      const defaultStatus: SubscriptionStatus = {
+        isActive: true,
+        isTester: false,
+        plan: 'pro',
+        status: 'active',
+        currentPeriodEnd: null,
+        cancelAtPeriodEnd: false,
+        limits: {
+          maxProjects: 999,
+          maxClients: 999,
+          maxChatbots: 999,
+          analyticsAccess: true,
+          customBranding: true,
+          apiAccess: true,
         },
-      });
+      };
 
-      if (response.status === 401) {
-        localStorage.removeItem('jwt_token');
-        throw new Error('Authentication token expired');
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSubscriptionStatus(data.data);
-      } else {
-        throw new Error(data.error || 'Failed to fetch subscription status');
-      }
+      setSubscriptionStatus(defaultStatus);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      setError(errorMessage);
-      console.error('Error fetching subscription status:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load subscription status');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    fetchSubscriptionStatus();
+  }, [fetchSubscriptionStatus]);
 
   const refreshSubscription = useCallback(async () => {
     await fetchSubscriptionStatus();
   }, [fetchSubscriptionStatus]);
 
   const cancelSubscription = useCallback(async (cancelAtPeriodEnd: boolean = true): Promise<boolean> => {
-    try {
-      const token = localStorage.getItem('jwt_token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch('/api/billing/cancel-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ cancelAtPeriodEnd }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: 'Subscription Updated',
-          description: data.message,
-        });
-        
-        // Refresh subscription status
-        await refreshSubscription();
-        return true;
-      } else {
-        throw new Error(data.error || 'Failed to cancel subscription');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      return false;
-    }
-  }, [toast, refreshSubscription]);
+    toast({
+      title: 'Contact Support',
+      description: 'To cancel your subscription, please contact support@tourcompanion.com',
+      variant: 'default',
+    });
+    return false;
+  }, [toast]);
 
   const reactivateSubscription = useCallback(async (): Promise<boolean> => {
-    try {
-      const token = localStorage.getItem('jwt_token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
+    toast({
+      title: 'Contact Support',
+      description: 'To reactivate your subscription, please contact support@tourcompanion.com',
+      variant: 'default',
+    });
+    return false;
+  }, [toast]);
 
-      const response = await fetch('/api/billing/reactivate-subscription', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: 'Subscription Reactivated',
-          description: data.message,
-        });
-        
-        // Refresh subscription status
-        await refreshSubscription();
-        return true;
-      } else {
-        throw new Error(data.error || 'Failed to reactivate subscription');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      return false;
-    }
-  }, [toast, refreshSubscription]);
-
-  const openCustomerPortal = useCallback(async (): Promise<void> => {
-    try {
-      const token = localStorage.getItem('jwt_token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch('/api/billing/customer-portal', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        window.open(data.data.url, '_blank');
-      } else {
-        throw new Error(data.error || 'Failed to open customer portal');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    }
+  const openCustomerPortal = useCallback(async () => {
+    toast({
+      title: 'Contact Support',
+      description: 'For billing questions, please contact support@tourcompanion.com',
+      variant: 'default',
+    });
   }, [toast]);
 
   const hasFeatureAccess = useCallback((feature: 'basic' | 'pro'): boolean => {
-    if (!subscriptionStatus) return false;
-    
-    // Testers have access to all features
-    if (subscriptionStatus.isTester) return true;
-    
-    // Check if subscription is active
-    if (!subscriptionStatus.isActive) return false;
-    
-    // Check feature access based on plan
-    if (feature === 'basic') return true; // any active plan
-
-    if (feature === 'pro') return subscriptionStatus.plan === 'pro' || subscriptionStatus.plan === 'pro_plus';
-    
-    return false;
-  }, [subscriptionStatus]);
+    // All users have pro access by default (Stripe removed)
+    return true;
+  }, []);
 
   const canCreateProject = useCallback((currentCount: number): boolean => {
-    if (!subscriptionStatus) return false;
-    
-    // Testers have unlimited access
-    if (subscriptionStatus.isTester) return true;
-    
-    // Check if subscription is active
-    if (!subscriptionStatus.isActive) return false;
-    
-    // Check limits
-    const maxProjects = subscriptionStatus.limits.maxProjects;
-    return maxProjects === -1 || currentCount < maxProjects;
-  }, [subscriptionStatus]);
+    return currentCount < 999; // High limit for now
+  }, []);
 
   const canAddClient = useCallback((currentCount: number): boolean => {
-    if (!subscriptionStatus) return false;
-    
-    // Testers have unlimited access
-    if (subscriptionStatus.isTester) return true;
-    
-    // Check if subscription is active
-    if (!subscriptionStatus.isActive) return false;
-    
-    // Check limits
-    const maxClients = subscriptionStatus.limits.maxClients;
-    return maxClients === -1 || currentCount < maxClients;
-  }, [subscriptionStatus]);
+    return currentCount < 999; // High limit for now
+  }, []);
 
   const canCreateChatbot = useCallback((currentCount: number): boolean => {
-    if (!subscriptionStatus) return false;
-    
-    // Testers have unlimited access
-    if (subscriptionStatus.isTester) return true;
-    
-    // Check if subscription is active
-    if (!subscriptionStatus.isActive) return false;
-    
-    // Check limits
-    const maxChatbots = subscriptionStatus.limits.maxChatbots;
-    return maxChatbots === -1 || currentCount < maxChatbots;
-  }, [subscriptionStatus]);
-
-  useEffect(() => {
-    fetchSubscriptionStatus();
-  }, [fetchSubscriptionStatus]);
+    return currentCount < 999; // High limit for now
+  }, []);
 
   return {
     subscriptionStatus,
@@ -273,5 +139,3 @@ export const useBilling = (): BillingHookReturn => {
     canCreateChatbot,
   };
 };
-
-

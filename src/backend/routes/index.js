@@ -11,7 +11,6 @@ import projectsRoutes from './projects.js';
 import clientsRoutes from './clients.js';
 import chatbotsRoutes from './chatbots.js';
 import analyticsRoutes from './analytics.js';
-import billingRoutes from './billing.js';
 import healthRoutes from './health.js';
 
 const router = express.Router();
@@ -25,7 +24,6 @@ router.use('/projects', projectsRoutes);
 router.use('/clients', clientsRoutes);
 router.use('/chatbots', chatbotsRoutes);
 router.use('/analytics', analyticsRoutes);
-router.use('/billing', billingRoutes);
 
 // API info endpoint
 router.get('/', (req, res) => {
@@ -39,8 +37,7 @@ router.get('/', (req, res) => {
       projects: '/projects',
       clients: '/clients',
       chatbots: '/chatbots',
-      analytics: '/analytics',
-      billing: '/billing'
+      analytics: '/analytics'
     },
     documentation: '/docs',
     status: 'operational'
