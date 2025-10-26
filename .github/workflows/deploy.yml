@@ -42,10 +42,13 @@ jobs:
         VITE_API_TIMEOUT: 30000
         VITE_MAX_FILE_SIZE: 10485760
         
+    - name: Configure Git
+      run: |
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+
     - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      if: github.ref == 'refs/heads/main'
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./dist
-        cname: tourcompanion.com
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        npx gh-pages -d dist -u "github-actions[bot] <github-actions[bot]@users.noreply.github.com>" --repo "https://x-access-token:${GITHUB_TOKEN}@github.com/tourcompanion360/suka.git" --no-history
