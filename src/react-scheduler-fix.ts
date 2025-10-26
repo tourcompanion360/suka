@@ -33,6 +33,32 @@ if (typeof window !== 'undefined') {
 
     // Make it globally available
     (window as any).ReactScheduler = mockScheduler;
+    // If the scheduler package is available in the bundle, prefer attaching
+    // the real scheduler to window so vendor code that expects it finds it.
+    try {
+      import('scheduler').then((sch) => {
+        if (sch) {
+          (window as any).ReactScheduler = sch;
+          // Mirror expected API onto window.React if present
+          try {
+            const r = (window as any).React || {};
+            if (!r.unstable_scheduleCallback && sch.unstable_scheduleCallback) {
+              r.unstable_scheduleCallback = sch.unstable_scheduleCallback;
+              r.unstable_cancelCallback = sch.unstable_cancelCallback;
+              r.unstable_now = sch.unstable_now;
+              r.unstable_getCurrentPriorityLevel = sch.unstable_getCurrentPriorityLevel;
+              r.unstable_shouldYield = sch.unstable_shouldYield;
+              r.unstable_requestPaint = sch.unstable_requestPaint;
+              r.unstable_runWithPriority = sch.unstable_runWithPriority;
+              r.unstable_wrapCallback = sch.unstable_wrapCallback;
+              r.unstable_getFirstCallbackNode = sch.unstable_getFirstCallbackNode;
+            }
+          } catch (e) {
+            // noop
+          }
+        }
+      }).catch(() => {});
+    } catch (e) {}
   }
 }
 
