@@ -56,13 +56,12 @@
 
   <body>
     <div id="root"></div>
-    <!-- Inline React scheduler polyfill: runs before bundled modules to avoid unstable_scheduleCallback errors -->
+    <!-- Synchronous React scheduler initialization: MUST run before any modules load -->
     <script>
       try {
         if (typeof window !== 'undefined') {
-          // Minimal scheduler implementation used by React when the real scheduler
-          // isn't available at runtime. We attach it to multiple globals to
-          // maximize the chance the vendor bundle finds the expected API.
+          console.log('[Scheduler] Initializing scheduler polyfill...');
+
           const scheduler = {
             unstable_scheduleCallback: function(priority, callback) { return setTimeout(callback, 0); },
             unstable_cancelCallback: function(id) { clearTimeout(id); },
@@ -78,29 +77,35 @@
             unstable_forceFrameRate: function() {}
           };
 
-          // Attach where vendor code might look for it
-          try { window.React = window.React || {}; } catch (e) {}
-          try { window.ReactScheduler = window.ReactScheduler || scheduler; } catch (e) {}
-
-          // Prefer attaching directly onto window.React to satisfy bundles that
-          // check window.React.unstable_scheduleCallback
-          try {
-            if (!window.React.unstable_scheduleCallback) {
-              window.React.unstable_scheduleCallback = scheduler.unstable_scheduleCallback;
-              window.React.unstable_cancelCallback = scheduler.unstable_cancelCallback;
-              window.React.unstable_now = scheduler.unstable_now;
-              window.React.unstable_getCurrentPriorityLevel = scheduler.unstable_getCurrentPriorityLevel;
-              window.React.unstable_shouldYield = scheduler.unstable_shouldYield;
-              window.React.unstable_requestPaint = scheduler.unstable_requestPaint;
-              window.React.unstable_runWithPriority = scheduler.unstable_runWithPriority;
-              window.React.unstable_wrapCallback = scheduler.unstable_wrapCallback;
-              window.React.unstable_getFirstCallbackNode = scheduler.unstable_getFirstCallbackNode;
-              window.React.unstable_pauseExecution = scheduler.unstable_pauseExecution;
-              window.React.unstable_continueExecution = scheduler.unstable_continueExecution;
-              window.React.unstable_forceFrameRate = scheduler.unstable_forceFrameRate;
+          // Initialize window.React if not present (avoid 'undefined' errors)
+          try { 
+            if (!window.React) {
+              window.React = {};
+              console.log('[Scheduler] Created empty window.React');
             }
           } catch (e) {
+            console.error('[Scheduler] Failed to initialize window.React:', e);
+          }
+
+          // Attach scheduler API directly to window.React
+          try {
+            // Always overwrite to ensure our implementation is used
+            window.React.unstable_scheduleCallback = scheduler.unstable_scheduleCallback;
+            window.React.unstable_cancelCallback = scheduler.unstable_cancelCallback;
+            window.React.unstable_now = scheduler.unstable_now;
+            window.React.unstable_getCurrentPriorityLevel = scheduler.unstable_getCurrentPriorityLevel;
+            window.React.unstable_shouldYield = scheduler.unstable_shouldYield;
+            window.React.unstable_requestPaint = scheduler.unstable_requestPaint;
+            window.React.unstable_runWithPriority = scheduler.unstable_runWithPriority;
+            window.React.unstable_wrapCallback = scheduler.unstable_wrapCallback;
+            window.React.unstable_getFirstCallbackNode = scheduler.unstable_getFirstCallbackNode;
+            window.React.unstable_pauseExecution = scheduler.unstable_pauseExecution;
+            window.React.unstable_continueExecution = scheduler.unstable_continueExecution;
+            window.React.unstable_forceFrameRate = scheduler.unstable_forceFrameRate;
+            console.log('[Scheduler] Attached scheduler API to window.React');
+          } catch (e) {
             // Ignore protected globals
+            console.error('[Scheduler] Failed to attach scheduler API:', e);
           }
 
           // Ensure devtools hook is present to avoid errors from React internals
@@ -114,20 +119,20 @@
             }
           } catch (e) {}
 
-          console.log('Inline ReactScheduler polyfill applied');
+          // Also attach to window.ReactScheduler for maximum compatibility
+          try {
+            window.ReactScheduler = scheduler;
+            console.log('[Scheduler] Attached scheduler to window.ReactScheduler');
+          } catch (e) {
+            console.error('[Scheduler] Failed to attach window.ReactScheduler:', e);
+          }
+
+          console.log('[Scheduler] Initialization complete');
         }
       } catch (e) { console.warn('ReactScheduler polyfill failed', e); }
     </script>
-    <script type="module">
-      // Ensure the scheduler fix module runs before the main app bundle.
-      // Import the fix first, then dynamically import the main entry.
-      try {
-        import('./src/react-scheduler-fix.ts').catch(()=>{}).then(() => {
-          import('./src/main.tsx').catch((e) => { console.error('Failed to load main:', e); });
-        });
-      } catch (e) {
-        console.error('Module loader error', e);
-      }
+    <!-- Load main app entry point -->
+    <script type="module" src="./src/main.tsx">
     </script>
   </body>
 </html>

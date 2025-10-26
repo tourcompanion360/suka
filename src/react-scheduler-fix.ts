@@ -1,64 +1,68 @@
 // React 18 Scheduler Fix
 // This fixes the "unstable_scheduleCallback" error that causes blank screens
 
-// Polyfill for React 18 scheduler
-if (typeof window !== 'undefined') {
-  const reactGlobal = (window as any).React;
-  // Create a mock scheduler if it doesn't exist
-  if (!reactGlobal || !reactGlobal.unstable_scheduleCallback) {
-    console.log('Applying React 18 scheduler fix...');
-    
-    // Mock the scheduler functions
-    const mockScheduler = {
-      unstable_scheduleCallback: (priority: any, callback: any, options?: any) => {
-        // Use setTimeout as a fallback
-        return setTimeout(callback, 0);
-      },
-      unstable_cancelCallback: (callbackId: any) => {
-        clearTimeout(callbackId);
-      },
+// Initialize scheduler implementation as early as possible
+function initScheduler() {
+  if (typeof window === 'undefined') return;
+
+  console.log('[Scheduler] Initializing implementation...');
+  
+  // Create scheduler implementation
+  const scheduler = {
+    unstable_scheduleCallback: (priority: any, callback: any) => setTimeout(callback, 0),
+    unstable_cancelCallback: (id: any) => clearTimeout(id),
+    unstable_now: () => performance.now(),
+    unstable_getCurrentPriorityLevel: () => 0,
+    unstable_shouldYield: () => false,
+    unstable_requestPaint: () => {},
+    unstable_runWithPriority: (_: any, cb: any) => cb(),
+    unstable_wrapCallback: (cb: any) => cb,
+    unstable_getFirstCallbackNode: () => null,
+    unstable_pauseExecution: () => {},
+    unstable_continueExecution: () => {},
+    unstable_forceFrameRate: () => {},
+  };
+
+  try {
+    // Initialize window.React if needed
+    if (!(window as any).React) {
+      (window as any).React = {};
+      console.log('[Scheduler] Created window.React object');
+    }
+    const scheduler = {
+      unstable_scheduleCallback: (priority: any, callback: any) => setTimeout(callback, 0),
+      unstable_cancelCallback: (id: any) => clearTimeout(id),
       unstable_now: () => performance.now(),
       unstable_getCurrentPriorityLevel: () => 0,
       unstable_shouldYield: () => false,
       unstable_requestPaint: () => {},
-      unstable_runWithPriority: (priority: any, callback: any) => {
-        return callback();
-      },
-      unstable_wrapCallback: (callback: any) => callback,
+      unstable_runWithPriority: (_: any, cb: any) => cb(),
+      unstable_wrapCallback: (cb: any) => cb,
       unstable_getFirstCallbackNode: () => null,
       unstable_pauseExecution: () => {},
       unstable_continueExecution: () => {},
       unstable_forceFrameRate: () => {},
     };
 
-    // Make it globally available
-    (window as any).ReactScheduler = mockScheduler;
-    // If the scheduler package is available in the bundle, prefer attaching
-    // the real scheduler to window so vendor code that expects it finds it.
-    try {
-      import('scheduler').then((sch) => {
-        if (sch) {
-          (window as any).ReactScheduler = sch;
-          // Mirror expected API onto window.React if present
-          try {
-            const r = (window as any).React || {};
-            if (!r.unstable_scheduleCallback && sch.unstable_scheduleCallback) {
-              r.unstable_scheduleCallback = sch.unstable_scheduleCallback;
-              r.unstable_cancelCallback = sch.unstable_cancelCallback;
-              r.unstable_now = sch.unstable_now;
-              r.unstable_getCurrentPriorityLevel = sch.unstable_getCurrentPriorityLevel;
-              r.unstable_shouldYield = sch.unstable_shouldYield;
-              r.unstable_requestPaint = sch.unstable_requestPaint;
-              r.unstable_runWithPriority = sch.unstable_runWithPriority;
-              r.unstable_wrapCallback = sch.unstable_wrapCallback;
-              r.unstable_getFirstCallbackNode = sch.unstable_getFirstCallbackNode;
-            }
-          } catch (e) {
-            // noop
-          }
-        }
-      }).catch(() => {});
-    } catch (e) {}
+    // Attach directly to window.React
+    // Attach to window.React
+    const react = (window as any).React;
+    Object.keys(scheduler).forEach(key => {
+      react[key] = scheduler[key];
+    });
+    console.log('[Scheduler] Attached scheduler API to window.React');
+
+    // Also make available as window.ReactScheduler
+    (window as any).ReactScheduler = scheduler;
+    console.log('[Scheduler] Attached scheduler to window.ReactScheduler');
+
+  } catch (e) {
+    console.error('[Scheduler] Failed to initialize:', e);
+  }
+}
+
+// Run initialization immediately
+initScheduler();
   }
 }
 
