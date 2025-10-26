@@ -5,6 +5,22 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/site.webmanifest",
+      "destination": "/site.webmanifest"
+    },
+    {
+      "source": "/icon-:size.png",
+      "destination": "/icon-:size.png"
+    },
+    {
+      "source": "/apple-touch-icon.png",
+      "destination": "/apple-touch-icon.png"
+    },
+    {
+      "source": "/browserconfig.xml",
+      "destination": "/browserconfig.xml"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
