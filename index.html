@@ -56,6 +56,28 @@
 
   <body>
     <div id="root"></div>
+    <!-- Inline React scheduler polyfill: runs before bundled modules to avoid unstable_scheduleCallback errors -->
+    <script>
+      try {
+        if (typeof window !== 'undefined' && (!window.React || !window.React.unstable_scheduleCallback)) {
+          window.ReactScheduler = {
+            unstable_scheduleCallback: function(priority, callback) { return setTimeout(callback, 0); },
+            unstable_cancelCallback: function(id) { clearTimeout(id); },
+            unstable_now: function() { return performance.now(); },
+            unstable_getCurrentPriorityLevel: function() { return 0; },
+            unstable_shouldYield: function() { return false; },
+            unstable_requestPaint: function() {},
+            unstable_runWithPriority: function(p, cb) { return cb(); },
+            unstable_wrapCallback: function(cb) { return cb; },
+            unstable_getFirstCallbackNode: function() { return null; },
+            unstable_pauseExecution: function() {},
+            unstable_continueExecution: function() {},
+            unstable_forceFrameRate: function() {}
+          };
+          console.log('Inline ReactScheduler polyfill applied');
+        }
+      } catch (e) { console.warn('ReactScheduler polyfill failed', e); }
+    </script>
     <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>
