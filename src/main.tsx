@@ -1,9 +1,12 @@
+// Ensure the scheduler fix runs before any React/ReactDOM imports.
+// This helps avoid runtime errors where vendor bundles access
+// unstable_scheduleCallback before a scheduler implementation exists.
+import './react-scheduler-fix.ts'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { runDeploymentDiagnostics } from './utils/deploymentDiagnostics'
-import './react-scheduler-fix.ts'
 
 // Simple test to see if React is working
 console.log('🚀 Main.tsx loaded successfully');
