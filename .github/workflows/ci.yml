@@ -185,10 +185,10 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages (gh-pages expects GH_TOKEN)
         run: npm run deploy
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # =============================================================================
   # NOTIFICATION
