@@ -59,8 +59,11 @@
     <!-- Inline React scheduler polyfill: runs before bundled modules to avoid unstable_scheduleCallback errors -->
     <script>
       try {
-        if (typeof window !== 'undefined' && (!window.React || !window.React.unstable_scheduleCallback)) {
-          window.ReactScheduler = {
+        if (typeof window !== 'undefined') {
+          // Minimal scheduler implementation used by React when the real scheduler
+          // isn't available at runtime. We attach it to multiple globals to
+          // maximize the chance the vendor bundle finds the expected API.
+          const scheduler = {
             unstable_scheduleCallback: function(priority, callback) { return setTimeout(callback, 0); },
             unstable_cancelCallback: function(id) { clearTimeout(id); },
             unstable_now: function() { return performance.now(); },
@@ -74,6 +77,43 @@
             unstable_continueExecution: function() {},
             unstable_forceFrameRate: function() {}
           };
+
+          // Attach where vendor code might look for it
+          try { window.React = window.React || {}; } catch (e) {}
+          try { window.ReactScheduler = window.ReactScheduler || scheduler; } catch (e) {}
+
+          // Prefer attaching directly onto window.React to satisfy bundles that
+          // check window.React.unstable_scheduleCallback
+          try {
+            if (!window.React.unstable_scheduleCallback) {
+              window.React.unstable_scheduleCallback = scheduler.unstable_scheduleCallback;
+              window.React.unstable_cancelCallback = scheduler.unstable_cancelCallback;
+              window.React.unstable_now = scheduler.unstable_now;
+              window.React.unstable_getCurrentPriorityLevel = scheduler.unstable_getCurrentPriorityLevel;
+              window.React.unstable_shouldYield = scheduler.unstable_shouldYield;
+              window.React.unstable_requestPaint = scheduler.unstable_requestPaint;
+              window.React.unstable_runWithPriority = scheduler.unstable_runWithPriority;
+              window.React.unstable_wrapCallback = scheduler.unstable_wrapCallback;
+              window.React.unstable_getFirstCallbackNode = scheduler.unstable_getFirstCallbackNode;
+              window.React.unstable_pauseExecution = scheduler.unstable_pauseExecution;
+              window.React.unstable_continueExecution = scheduler.unstable_continueExecution;
+              window.React.unstable_forceFrameRate = scheduler.unstable_forceFrameRate;
+            }
+          } catch (e) {
+            // Ignore protected globals
+          }
+
+          // Ensure devtools hook is present to avoid errors from React internals
+          try {
+            if (!window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+              Object.defineProperty(window, '__REACT_DEVTOOLS_GLOBAL_HOOK__', {
+                value: { supportsFiber: true, inject: () => {}, onCommitFiberRoot: () => {}, onCommitFiberUnmount: () => {} },
+                configurable: true,
+                writable: true
+              });
+            }
+          } catch (e) {}
+
           console.log('Inline ReactScheduler polyfill applied');
         }
       } catch (e) { console.warn('ReactScheduler polyfill failed', e); }
