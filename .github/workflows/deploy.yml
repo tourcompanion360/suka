@@ -47,8 +47,21 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
 
-    - name: Deploy to GitHub Pages
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-files
+        path: dist/
+
+    - name: Optional: Deploy to Vercel (if VERCEL_TOKEN is set)
+      if: ${{ secrets.VERCEL_TOKEN }}
       run: |
-        npx gh-pages -d dist -u "github-actions[bot] <github-actions[bot]@users.noreply.github.com>" --repo "https://x-access-token:${GITHUB_TOKEN}@github.com/tourcompanion360/suka.git" --no-history
+        echo "VERCEL_TOKEN provided — deploying to Vercel"
+        npm install -g vercel@28 || true
+        npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --confirm
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+    - name: Skip deploy (no VERCEL_TOKEN)
+      if: ${{ !secrets.VERCEL_TOKEN }}
+      run: echo "VERCEL_TOKEN not set, skipping remote deploy. Built artifacts remain in dist/"
