@@ -46,28 +46,27 @@ export const runDeploymentDiagnostics = () => {
     diagnostics.errors.push('Supabase environment variables are missing');
   }
 
-  // Test asset loading
-  const testAsset = document.createElement('script');
-  testAsset.src = './assets/index-CU0xPZjg.js';
-  testAsset.onerror = () => {
-    diagnostics.errors.push('Main application script failed to load');
-  };
-  testAsset.onload = () => {
-    console.log('✅ Main application script loaded successfully');
-  };
-  document.head.appendChild(testAsset);
+  if (import.meta.env.PROD) {
+    const moduleScripts = Array.from(document.querySelectorAll<HTMLScriptElement>('script[type="module"]'));
+    const hasBundledScript = moduleScripts.some((script) => script.src.includes('/assets/'));
 
-  // Test CSS loading
-  const testCSS = document.createElement('link');
-  testCSS.rel = 'stylesheet';
-  testCSS.href = './assets/index-CGA1F0yl.css';
-  testCSS.onerror = () => {
-    diagnostics.errors.push('Main CSS file failed to load');
-  };
-  testCSS.onload = () => {
-    console.log('✅ Main CSS file loaded successfully');
-  };
-  document.head.appendChild(testCSS);
+    if (hasBundledScript) {
+      console.log('✅ Main application script detected');
+    } else {
+      diagnostics.errors.push('Unable to locate bundled application script tag');
+    }
+
+    const styleSheets = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'));
+    const hasStyles = styleSheets.some((link) => link.href.includes('/assets/'));
+
+    if (hasStyles) {
+      console.log('✅ Main CSS file detected');
+    } else {
+      diagnostics.errors.push('Unable to locate bundled stylesheet link tag');
+    }
+  } else {
+    console.log('ℹ️ Skipping asset presence checks in development mode');
+  }
 
   // Log results
   if (diagnostics.errors.length > 0) {

@@ -3,8 +3,9 @@
 
 // Polyfill for React 18 scheduler
 if (typeof window !== 'undefined') {
+  const reactGlobal = (window as any).React;
   // Create a mock scheduler if it doesn't exist
-  if (!window.React || !window.React.unstable_scheduleCallback) {
+  if (!reactGlobal || !reactGlobal.unstable_scheduleCallback) {
     console.log('Applying React 18 scheduler fix...');
     
     // Mock the scheduler functions
@@ -38,14 +39,29 @@ if (typeof window !== 'undefined') {
 // Alternative fix: Use React 17 compatibility mode
 export const enableReact17Compatibility = () => {
   if (typeof window !== 'undefined') {
-    // Disable React 18 concurrent features
-    (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__ = {
-      ...((window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__ || {}),
-      supportsFiber: true,
-      inject: () => {},
-      onCommitFiberRoot: () => {},
-      onCommitFiberUnmount: () => {},
-    };
+    const hook = (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__;
+
+    if (hook && typeof hook === 'object') {
+      hook.supportsFiber = true;
+      hook.inject = hook.inject || (() => {});
+      hook.onCommitFiberRoot = hook.onCommitFiberRoot || (() => {});
+      hook.onCommitFiberUnmount = hook.onCommitFiberUnmount || (() => {});
+    } else if (!hook) {
+      try {
+        Object.defineProperty(window, '__REACT_DEVTOOLS_GLOBAL_HOOK__', {
+          value: {
+            supportsFiber: true,
+            inject: () => {},
+            onCommitFiberRoot: () => {},
+            onCommitFiberUnmount: () => {},
+          },
+          configurable: true,
+          writable: true,
+        });
+      } catch (error) {
+        console.warn('React devtools hook patch skipped:', error);
+      }
+    }
   }
 };
 
